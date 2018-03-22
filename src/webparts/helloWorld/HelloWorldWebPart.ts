@@ -15,6 +15,7 @@ import styles from './HelloWorldWebPart.module.scss';
 import * as strings from 'HelloWorldWebPartStrings';
 import ListArray from './MockHttpClient';
 import { SPHttpClient, SPHttpClientResponse } from "@microsoft/sp-http";
+import axios from 'axios';
 
 export interface IHelloWorldWebPartProps {
   description: string;
@@ -69,10 +70,16 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
 	}
 
 	private _getListData(): Promise<ISPLists> {
-		return this.context.spHttpClient.get(this.context.pageContext.web.absoluteUrl + `/_api/web/lists?$filter=Hidden eq false`, SPHttpClient.configurations.v1)
-		.then((response: SPHttpClientResponse) => {
-			return response.json();
-		}) as Promise<ISPLists>;
+		//return this.context.spHttpClient.get(this.context.pageContext.web.absoluteUrl + `/_api/web/lists?$filter=Hidden eq false`, SPHttpClient.configurations.v1)
+		return axios
+			.get(
+				this.context.pageContext.web.absoluteUrl +
+					`/_api/web/lists?$filter=Hidden eq false`, {
+				headers: { "accept": "application/json;odata=verbose" }
+			})
+			.then((response) => {
+				return response.data;
+			}) as Promise<ISPLists>;
 	}
 
 	private _renderListAsync(): void {
@@ -95,16 +102,17 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
 		let html: string = '';
 		items.forEach((item: ISPList) => {
 			html += `
-		<ul class="${styles.list}">
-			<li class="${styles.listItem}">
-			<span class="ms-font-l">${item.Title}</span>
-			</li>
-		</ul>`;
-   });
+			<ul class="${styles.list}">
+				<li class="${styles.listItem}">
+				<span class="ms-font-l">${item.Title}</span>
+				</li>
+			</ul>`;
+		});
 
-   const listContainer: Element = this.domElement.querySelector('#spListContainer');
-   listContainer.innerHTML = html;
- }
+		const listContainer: Element = this.domElement.querySelector('#spListContainer');
+		listContainer.innerHTML = html;
+	}
+
 	protected get dataVersion(): Version {
 		return Version.parse('1.0');
 	}
